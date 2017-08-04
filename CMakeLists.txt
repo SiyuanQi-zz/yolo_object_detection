@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(YoloObjDetection)
+project(yolo_object_detection)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -64,19 +64,19 @@ list(APPEND LINK_LIBS
 )
 
 file(GLOB CUDA_SOURCE_FILES src/*.cu)
-CUDA_ADD_LIBRARY(YoloCUDA ${CUDA_SOURCE_FILES})
+CUDA_ADD_LIBRARY(YOLO_CUDA ${CUDA_SOURCE_FILES})
 
 file(GLOB LIB_SOURCE_FILES src/*.c src/examples/*.c)
-add_library(YoloLibs ${LIB_SOURCE_FILES})
+add_library(YOLO_LIBS ${LIB_SOURCE_FILES})
 
-add_executable(YoloObjDetect src/darknet.cpp)
+add_executable(yolo src/darknet.cpp)
 
-target_link_libraries(YoloCUDA ${LINK_LIBS})
-target_link_libraries(YoloLibs YoloCUDA ${LINK_LIBS})
+target_link_libraries(YOLO_CUDA ${LINK_LIBS})
+target_link_libraries(YOLO_LIBS YOLO_CUDA ${LINK_LIBS})
 
 # file(GLOB EXAMPLE_FILES src/examples/*.c)
-# add_executable(YoloObjDetect src/darknet.cpp ${EXAMPLE_FILES})
+# add_executable(yolo src/darknet.cpp ${EXAMPLE_FILES})
 
 
-target_link_libraries(YoloObjDetect YoloLibs YoloCUDA ${LINK_LIBS})
-add_dependencies(YoloObjDetect YoloObjDetect_generate_messages_cpp)
+target_link_libraries(yolo YOLO_LIBS YOLO_CUDA ${LINK_LIBS})
+add_dependencies(yolo YoloObjDetect_generate_messages_cpp)
