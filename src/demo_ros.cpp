@@ -26,13 +26,19 @@ static image **demo_alphabet;
 static int demo_classes;
 
 //kinect2 frame params configuration
-static int frame_width = 1920;
-static int frame_height = 1080;
+// static int frame_width = 1920;
+// static int frame_height = 1080;
+static int frame_width = 640;
+static int frame_height = 480;
 static int frame_channels = 3;
 
 static float **probs;
 static box *boxes;
 static network net;
+static network net2;
+static float **probs2;
+static box *boxes2;
+static float **predictions2;
 static image buff [3];
 static image buff_letter[3];
 static int buff_index = 0;
@@ -43,19 +49,17 @@ static float demo_thresh = 0;
 static float demo_hier = .5;
 static int running = 0;
 
-static int demo_delay = 0;
-static int demo_frame = 5;
+static int demo_frame = 3;
 static int demo_detections = 0;
 static float **predictions;
 static int demo_index = 0;
 static int demo_done = 0;
-static float *last_avg2;
-static float *last_avg;
 static float *avg;
 double demo_time;
 
 //topic name from kinect2
-const char* image_topic_name = "/kinect2/hd/image_color";
+// const char* image_topic_name = "/kinect2/hd/image_color";
+const char* image_topic_name = "/usb_cam/image_raw";
 
 #ifdef __cplusplus
 extern "C" {
@@ -91,8 +95,7 @@ void *detect_in_thread(void *ptr)
 
     memcpy(predictions[demo_index], prediction, l.outputs*sizeof(float));
     mean_arrays(predictions, demo_frame, l.outputs, avg);
-    l.output = last_avg2;
-    if(demo_delay == 0) l.output = avg;
+    l.output = avg;
     if(l.type == DETECTION){
         get_detection_boxes(l, 1, 1, demo_thresh, probs, boxes, 0);
     } else if (l.type == REGION){
@@ -117,7 +120,7 @@ void *detect_in_thread(void *ptr)
 void fetch_image(const sensor_msgs::ImageConstPtr& msg)
 {
     try{
-        IplImage* src = new IplImage(cv_bridge::toCvCopy(msg, "bgr8")->image);
+        IplImage* src = new IplImage(cv_bridge::toCvCopy(msg, "rgb8")->image);
 	if (!src)
 	{
 		printf("no image\n");
@@ -149,12 +152,7 @@ void *display_in_thread(void *ptr)
     show_image_cv(buff[(buff_index + 1)%3], "Demo", ipl);
     int c = cvWaitKey(1);
     if (c != -1) c = c%256;
-    if (c == 10){
-        if(demo_delay == 0) demo_delay = 60;
-        else if(demo_delay == 5) demo_delay = 0;
-        else if(demo_delay == 60) demo_delay = 5;
-        else demo_delay = 0;
-    } else if (c == 27) {
+    if (c == 27) {
         demo_done = 1;
         return 0;
     } else if (c == 82) {
@@ -191,7 +189,6 @@ void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const ch
     image_transport::Subscriber sub;
 
 
-    demo_delay = delay;
     demo_frame = avg_frames;
     predictions = (float **)calloc(demo_frame, sizeof(float*));
     image **alphabet = load_alphabet();
@@ -217,8 +214,6 @@ void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const ch
     int j;
 
     avg = (float *) calloc(l.outputs, sizeof(float));
-    last_avg  = (float *) calloc(l.outputs, sizeof(float));
-    last_avg2 = (float *) calloc(l.outputs, sizeof(float));
     for(j = 0; j < demo_frame; ++j) predictions[j] = (float *) calloc(l.outputs, sizeof(float));
 
     boxes = (box *)calloc(l.w*l.h*l.n, sizeof(box));
@@ -254,14 +249,8 @@ void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const ch
         //if(pthread_create(&fetch_thread, 0, fetch_in_thread, 0)) error("Thread creation failed");
         if(pthread_create(&detect_thread, 0, detect_in_thread, 0)) error("Thread creation failed");
         if(!prefix){
-            if(count % (demo_delay+1) == 0){
-                fps = 1./(get_wall_time() - demo_time);
-                demo_time = get_wall_time();
-                float *swap = last_avg;
-                last_avg  = last_avg2;
-                last_avg2 = swap;
-                memcpy(last_avg, avg, l.outputs*sizeof(float));
-            }
+            fps = 1./(get_wall_time() - demo_time);
+            demo_time = get_wall_time();
             display_in_thread(0);
         }else{
             char name[256];
