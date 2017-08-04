@@ -1,0 +1,8 @@
+<launch>
+
+  <arg name="data" default="$(find yolo_object_detection)/cfg/coco.data" />
+  <arg name="cfg" default="$(find yolo_object_detection)/cfg/yolo.cfg" />
+  <arg name="weights" default="$(find yolo_object_detection)/yolo.weights" />
+
+  <node name="yolo" pkg="yolo_object_detection" type="yolo" args="detector demo $(arg data) $(arg cfg) $(arg weights)" required="true" output="screen" />
+</launch>

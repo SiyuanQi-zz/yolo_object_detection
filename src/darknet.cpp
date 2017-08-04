@@ -409,7 +409,6 @@ void visualize(char *cfgfile, char *weightfile)
 int main(int argc, char **argv)
 {
     ros::init(argc,argv,"yolo");
-    ros::NodeHandle nh;
 
     //test_resize("data/bad.jpg");
     //test_box();
