@@ -66,16 +66,14 @@ list(APPEND LINK_LIBS
 file(GLOB CUDA_SOURCE_FILES src/*.cu)
 CUDA_ADD_LIBRARY(YOLO_CUDA ${CUDA_SOURCE_FILES})
 
-file(GLOB LIB_SOURCE_FILES src/*.c src/examples/*.c)
+file(GLOB LIB_SOURCE_FILES src/demo_ros.cpp src/*.c src/examples/*.c)
+# list(REMOVE_ITEM LIB_SOURCE_FILES src/demo.c)
 add_library(YOLO_LIBS ${LIB_SOURCE_FILES})
 
 add_executable(yolo src/darknet.cpp)
 
 target_link_libraries(YOLO_CUDA ${LINK_LIBS})
 target_link_libraries(YOLO_LIBS YOLO_CUDA ${LINK_LIBS})
-
-# file(GLOB EXAMPLE_FILES src/examples/*.c)
-# add_executable(yolo src/darknet.cpp ${EXAMPLE_FILES})
 
 
 target_link_libraries(yolo YOLO_LIBS YOLO_CUDA ${LINK_LIBS})
