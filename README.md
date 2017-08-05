@@ -3,9 +3,9 @@ Ubuntu 16.04, ROS kinetic
 
 ## Settings
 - Set cuda architecture version (sm_xx according to your GPU) and cudnn path in `CMakeLists.txt`:
-```
+```cmake
 set(CUDA_NVCC_FLAGS "-gencode arch=compute_50,code=[sm_50,sm_50]" CACHE STRING "nvcc flags" FORCE)
-...cmake
+...
 link_directories(
   /usr/local/cuda-8.0/lib64
   /usr/local/lib
