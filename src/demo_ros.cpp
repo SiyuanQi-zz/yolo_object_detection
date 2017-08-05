@@ -59,7 +59,8 @@ double demo_time;
 
 //topic name from kinect2
 // const char* image_topic_name = "/kinect2/hd/image_color";
-const char* image_topic_name = "/usb_cam/image_raw";
+// const char* image_topic_name = "/usb_cam/image_raw";
+const char* image_topic_name = "/image";
 
 #ifdef __cplusplus
 extern "C" {

@@ -51,7 +51,7 @@ include_directories(
 link_directories(
   /usr/local/cuda-8.0/lib64
   /usr/local/lib
-  /home/siyuan/drivers/cuda/lib64
+  /home/siyuan/drivers/cuda/lib64 # Change this line to your cudnn path
 )
 
 list(APPEND LINK_LIBS
