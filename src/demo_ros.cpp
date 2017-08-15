@@ -118,6 +118,25 @@ void *detect_in_thread(void *ptr)
     return 0;
 }
 
+void ipl_into_flipped_image(IplImage* src, image im)
+{
+    unsigned char *data = (unsigned char *)src->imageData;
+    int h = src->height;
+    int w = src->width;
+    int c = src->nChannels;
+    int step = src->widthStep;
+    int i, j, k;
+
+    for(i = 0; i < h; ++i){
+        for(k= 0; k < c; ++k){
+            for(j = 0; j < w; ++j){
+                im.data[k*w*h + (h-i-1)*w + j] = data[i*step + j*c + k]/255.;
+            }
+        }
+    }
+}
+
+
 void fetch_image(const sensor_msgs::ImageConstPtr& msg)
 {
     try{
@@ -128,7 +147,11 @@ void fetch_image(const sensor_msgs::ImageConstPtr& msg)
 		return;
 	}
 
-	ipl_into_image(src, buff[buff_index]);
+  // V-REP images need to be vertically flipped
+  ipl_into_flipped_image(src, buff[buff_index]);
+
+	// ipl_into_image(src, buff[buff_index]);
+
 	//rgbgr_image(buff[buff_index]);
 	//cvReleaseImage(&src);
     }
