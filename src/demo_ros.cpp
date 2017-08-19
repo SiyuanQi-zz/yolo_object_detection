@@ -1,4 +1,5 @@
 #include <sys/time.h>
+#include <string>
 
 // #include "network.h"
 // #include "detection_layer.h"
@@ -15,6 +16,8 @@
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
 #define DEMO 1
@@ -61,6 +64,8 @@ double demo_time;
 // const char* image_topic_name = "/kinect2/hd/image_color";
 // const char* image_topic_name = "/usb_cam/image_raw";
 const char* image_topic_name = "/image";
+const char* detection_topic_name = "/detection";
+static std::string frame_id = "";
 
 #ifdef __cplusplus
 extern "C" {
@@ -141,6 +146,7 @@ void fetch_image(const sensor_msgs::ImageConstPtr& msg)
 {
     try{
         IplImage* src = new IplImage(cv_bridge::toCvCopy(msg, "rgb8")->image);
+        frame_id = (*msg).header.frame_id;
 	if (!src)
 	{
 		printf("no image\n");
@@ -193,12 +199,38 @@ void *display_in_thread(void *ptr)
     return 0;
 }
 
-void *display_loop(void *ptr)
+IplImage* image_to_ipl(image p)
 {
-    while(1){
-        display_in_thread(0);
+    IplImage *disp = cvCreateImage(cvSize(p.w,p.h), IPL_DEPTH_8U, p.c);
+
+    int x,y,k;
+
+    int step = disp->widthStep;
+    for(y = 0; y < p.h; ++y){
+        for(x = 0; x < p.w; ++x){
+            for(k= 0; k < p.c; ++k){
+                disp->imageData[(p.h-1-y)*step + x*p.c + k] = (unsigned char)(get_pixel(p,x,y,k)*255);
+            }
+        }
     }
+
+    return disp;
 }
+
+void publish_in_thread(image_transport::Publisher pub)
+{
+    IplImage* result = image_to_ipl(buff[(buff_index + 1)%3]);
+    sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "rgb8", cv::cvarrToMat(result, false)).toImageMsg();
+    (*msg).header.frame_id = frame_id;
+    pub.publish(msg);
+}
+
+// void *display_loop(void *ptr)
+// {
+//     while(1){
+//         display_in_thread(0);
+//     }
+// }
 
 void *detect_loop(void *ptr)
 {
@@ -211,6 +243,7 @@ void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const ch
 {
     ros::NodeHandle nh;
     image_transport::Subscriber sub;
+    image_transport::Publisher pub;
 
 
     demo_frame = avg_frames;
@@ -254,7 +287,9 @@ void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const ch
 
     image_transport::ImageTransport it(nh);
     sub = it.subscribe(image_topic_name, 1, fetch_image);
+    pub = it.advertise(detection_topic_name, 1);
 
+    prefix = "";
     int count = 0;
     if(!prefix){
         cvNamedWindow("Demo", CV_WINDOW_NORMAL);
@@ -277,9 +312,10 @@ void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const ch
             demo_time = get_wall_time();
             display_in_thread(0);
         }else{
-            char name[256];
-            sprintf(name, "%s_%08d", prefix, count);
-            save_image(buff[(buff_index + 1)%3], name);
+            publish_in_thread(pub);
+            // char name[256];
+            // sprintf(name, "%s_%08d", prefix, count);
+            // save_image(buff[(buff_index + 1)%3], name);
         }
         //pthread_join(fetch_thread, 0);
         pthread_join(detect_thread, 0);
