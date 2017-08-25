@@ -13,7 +13,7 @@ link_directories(
 )
 ```
 - Set your catkin workspace path in `scripts/run.sh`:
-```sh
+```bash
 catkin_ws_path="/home/siyuan/old_catkin_ws/"
 ```
 - Set your yolo_object_detection package path in `src/image.c`:
@@ -27,6 +27,12 @@ static int frame_width = 640;
 static int frame_height = 480;
 ...
 const char* image_topic_name = "/image";
+```
+
+- Download network weights into the source folder:
+```bash
+cd /home/siyuan/old_catkin_ws/src/yolo_object_detection
+wget https://pjreddie.com/media/files/yolo.weights
 ```
 
 ## Example usage
